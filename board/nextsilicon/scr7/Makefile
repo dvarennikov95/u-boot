@@ -1,0 +1,1 @@
+obj-y += nextsilicon-scr7.o

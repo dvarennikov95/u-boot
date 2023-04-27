@@ -1,0 +1,415 @@
+/dts-v1/;
+
+/ {
+    model = "NextSilicon SCR7";
+    compatible = "nextsilicon, scr7";
+
+    #address-cells = <2>;
+    #size-cells = <1>;
+
+    interrupt-parent = <&intc>;
+
+    aliases {
+		serial0 = &uart2;
+	};
+
+    /* Used by bootloader software to pass configuration information to the kernel or other software components during the boot process */
+    chosen {
+
+        /* 115,200 bits per second
+            no parity
+            8 data bits
+            1 stop bits (default) */
+        stdout-path = "serial0:115200n8";
+    };
+
+    /***********************************************************************Clocks**************************************************************************/
+    clocks {
+
+        /* Dedicated clock input for SCR7 cores with caches and PLIC. Clock domain crossing with cpu_clk
+            is implemented using dedicated synchronization module */
+        scr7_clk: scr7_clk {
+            compatible = "fixed-clock";
+            clock-frequency = <50000000>;   //50mhz
+            #clock-cells = <0>;
+        };
+
+        /* APB bus and APB subsystem clock. Asynchronous to cpu_clk and scr7_clk. */
+        cpu_PCLK: cpu_PCLK {
+            compatible = "fixed-clock";
+            clock-frequency = <50000000>;   //50mhz
+            #clock-cells = <0>;
+        };
+
+    };
+
+    /***********************************************************************CPUs Section**************************************************************************/
+    scr7-cpu-cluster {
+        #address-cells = <1>;
+        #size-cells = <0>;
+        riscv,isa = "rv64imafdc";
+
+        /* All the CPUs in the cluster are controlled using the scr7_clk */
+        clocks = <&scr7_clk>;
+
+        /* SCR7#0 */
+        cpu0@0 {
+            compatible = "riscv, scr7_0";
+            reg = <0x0>;
+            device_type = "cpu";
+            status = "okay";
+
+            cpu0_intc: interrupt-controller {
+				#interrupt-cells = <1>;
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+			};
+        };
+
+
+        /* SCR7#1 */
+        cpu1@1 {
+            compatible = "riscv, scr7_1";
+            reg = <0x1>;
+            device_type = "cpu";
+            status = "okay";
+
+            cpu1_intc: interrupt-controller {
+				#interrupt-cells = <1>;
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+			};
+        };
+
+        /* SCR7#2 */
+        cpu2@2 {
+            compatible = "riscv, scr7_2";
+            reg = <0x2>;
+            device_type = "cpu";
+            status = "okay";
+
+            cpu2_intc: interrupt-controller {
+				#interrupt-cells = <1>;
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+			};
+        };
+
+        /* SCR7#3 */
+        cpu3@3 {
+            compatible = "riscv, scr7_3";
+            reg = <0x3>;
+            device_type = "cpu";
+            status = "okay";
+
+            cpu3_intc: interrupt-controller {
+				#interrupt-cells = <1>;
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+			};
+        };
+        
+    };
+
+    /***********************************************************************PLIC Section (Platform-level interrupt controller)**************************************************************************/
+    // Driver source code: https://github.com/syntacore/linux/blob/84c8179d8fd8b8d1e01289c66b36b3ea54739bf8/drivers/irqchip/irq-sifive-plic.c
+    // Tests for IRQ: https://github.com/nextsilicon/nextutils/tree/master/nextrisc/tools/irq_test/src
+    intc: interrupt-controller@ffff8fffc0000000,0x1000000 { // PLIC addr range: 0xFFFF 8FFF C000 0000 to 0xFFFF 8FFF C0FF FFFF
+        compatible = "sifive,plic-1.0.0";
+        interrupt-controller;
+        #interrupt-cells = <1>;
+        reg = <0xffff8fff 0xc0000000 0x1000000>;
+        riscv,ndev = <10>; // Specifies how many external interrupts are supported by this controller
+
+        /* 0xffffffff - All interrupts are forwarded to all CPU cores
+            9 - interrupt line used for fast interrupts */
+        interrupts-extended = <&cpu0_intc 0xffffffff>, <&cpu0_intc 9>,
+				                <&cpu1_intc 0xffffffff>, <&cpu1_intc 9>,
+				                <&cpu2_intc 0xffffffff>, <&cpu2_intc 9>,
+				                <&cpu3_intc 0xffffffff>, <&cpu3_intc 9>;
+
+        /* Clocks */
+        clocks = <&scr7_clk>;
+    };
+
+    /***********************************************************************External APB subsystem**************************************************************************/
+    external-apb-subsystem@ffff8fffe0000000,0x40000 {   // External APB addr range: 0xFFFF 8FFF E000 0000 to 0xFFFF 8FFF E03F FFFF
+
+        /* All the devices under the APB subsystem are controlled by the cpu_PCLK clock */
+        clocks = <&cpu_PCLK>;
+		
+		reg-shift = <2>;
+		reg-io-width = <4>;
+
+        reg =   <0xffff8fff 0xe0214000 0x1000>,       // 0: UART1
+                <0xffff8fff 0xe0218000 0x1000>;       // 1: UART2
+
+        /* All the adresses in the external apb subsystem are non-cachable */
+        no-cache;
+
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        // https://github.com/nextsilicon/nextPostSi/blob/d509a27a4844230d116c6c0dab4b249fcc974924/sival/cr_space/uart_regs_1.h
+        // https://github.com/nextsilicon/u-boot/blob/521bf7a1e3c728811fcd5d260f5f1390b2ff2d53/drivers/serial/ns16550.c
+        uart1: serial@214000 {
+			compatible = "snps,dw-apb-uart";
+			reg = <0>;
+
+			interrupts = <5>;
+			status = "okay";
+		};
+
+        // https://github.com/nextsilicon/nextPostSi/blob/d509a27a4844230d116c6c0dab4b249fcc974924/sival/cr_space/uart_regs_2.h
+        uart2: serial@218000 {
+			compatible = "snps,dw-apb-uart";
+			reg = <1>;
+
+			interrupts = <3>;
+			status = "okay";
+		};
+    };
+
+    /***********************************************************************APB Section (Cluster control module section 6)**************************************************************************/
+    apb-cluster-control@ffff8fffe0400000,0x2000{    // APB cluster control addr range: 0xFFFF 8FFF E040 0000 to 0xFFFF 8FFF E040 1FFF
+
+        /* All the devices under the APB subsystem are controlled by the cpu_PCLK clock */
+        clocks = <&cpu_PCLK>;
+
+        /* All the adresses in the APB cluster control are non-cachable */
+        no-cache;
+
+        reg =   <0xffff8fff 0xe0400000 0x4>,       // 0: CPUCLKCTL
+                <0xffff8fff 0xe0400004 0x4>,       // 1: CPURSTCTL
+                <0xffff8fff 0xe0400008 0x4>,       // 2: SMEMERR
+                <0xffff8fff 0xe0400030 0x4>,       // 3: MHART4
+                <0xffff8fff 0xe04001bc 0x4>,       // 4: RSTV24L
+                <0xffff8fff 0xe04001c0 0x4>,       // 5: RSTV24H
+                <0xffff8fff 0xe04001c4 0x4>,       // 6: RSTV25L
+                <0xffff8fff 0xe04001c8 0x4>,       // 7: RSTV25H
+                <0xffff8fff 0xe04001cc 0x4>,       // 8: RSTV26L
+                <0xffff8fff 0xe04001d0 0x4>,       // 9: RSTV26H
+                <0xffff8fff 0xe04001d4 0x4>,       // 10: RSTV27L
+                <0xffff8fff 0xe04001d8 0x4>,       // 11: RSTV27H
+                <0xffff8fff 0xe0400260 0x4>,       // 12: INT24
+                <0xffff8fff 0xe0400264 0x4>,       // 13: INT25
+                <0xffff8fff 0xe0400268 0x4>,       // 14: INT26
+                <0xffff8fff 0xe040026c 0x4>,       // 15: INT27
+                <0xffff8fff 0xe040035c 0x4>,       // 16: INT24_RO
+                <0xffff8fff 0xe0400360 0x4>,       // 17: INT25_RO
+                <0xffff8fff 0xe0400364 0x4>,       // 18: INT26_RO
+                <0xffff8fff 0xe0400368 0x4>;       // 19: INT27_RO
+
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        /* Controls clock gating for all cores in the cluster; Width 28 bit, one bit per core.
+            Default value – 28’d0. Active high, core clock is enabled when bit is set value one. 
+            SCR7 cores start at bit 24. */
+        cpu-clock-control@ffff8fffe0400000,0x4 {
+            reg = <0>;
+            bits = <0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27>;
+            bit-names = "clk_SCR4_0#0", "clk_SCR4_0#1", "clk_SCR4_0#2", "clk_SCR4_0#3", "clk_SCR4_0#4", "clk_SCR4_0#5",
+                        "clk_SCR4_1#0", "clk_SCR4_1#1", "clk_SCR4_1#2", "clk_SCR4_1#3", "clk_SCR4_1#4", "clk_SCR4_1#5",
+                        "clk_SCR4_2#0", "clk_SCR4_2#1", "clk_SCR4_2#2", "clk_SCR4_2#3", "clk_SCR4_2#4", "clk_SCR4_2#5",
+                        "clk_SCR4_3#0", "clk_SCR4_3#1", "clk_SCR4_3#2", "clk_SCR4_3#3", "clk_SCR4_3#4", "clk_SCR4_3#5",
+                        "clk_SCR7_0#0", "clk_SCR7_0#1", "clk_SCR7_0#2", "clk_SCR7_0#3";
+        };
+
+        /* Controls reset for all cores in the cluster; Width 28 bit, one bit per core.
+            Default value – 28’d0. Active low, core is in reset state when bit is reset to zero. 
+            SCR7 cores start at bit 24. */
+        cpu-reset-control@ffff8fffe0400004,0x4 {
+            reg = <1>;
+            bits = <0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27>;
+            bit-names = "rst_SCR4_0#0", "rst_SCR4_0#1", "rst_SCR4_0#2", "rst_SCR4_0#3", "rst_SCR4_0#4", "rst_SCR4_0#5",
+                        "rst_SCR4_1#0", "rst_SCR4_1#1", "rst_SCR4_1#2", "rst_SCR4_1#3", "rst_SCR4_1#4", "rst_SCR4_1#5",
+                        "rst_SCR4_2#0", "rst_SCR4_2#1", "rst_SCR4_2#2", "rst_SCR4_2#3", "rst_SCR4_2#4", "rst_SCR4_2#5",
+                        "rst_SCR4_3#0", "rst_SCR4_3#1", "rst_SCR4_3#2", "rst_SCR4_3#3", "rst_SCR4_3#4", "rst_SCR4_3#5",
+                        "rst_SCR7_0#0", "rst_SCR7_0#1", "rst_SCR7_0#2", "rst_SCR7_0#3";
+            active-low;
+        };
+
+        /* Shared memory banks parity error status. Each bit stores status for one Shared
+            memory bank, e.g. bit 0 – Bank0, bit 3 – Bank3. Value one means error, value zero – normal
+            operation. Read-only register. */
+        mem-parity-err-status@ffff8fffe0400008,0x4 {
+            reg = <2>;
+            bits = <0 1 2 3>;
+            bit-names = "sram-bank0", "sram-bank1", "sram-bank2", "sram-bank3";
+            read-only;
+        };
+
+        /* MHARTID (Machine Hardware Attributes Register ID) for SCR7. A register in the RISC-V architecture that 
+            is used to identify the type and configuration of the hardware platform on which the processor is running. 
+            It is part of the Machine Information Registers (MIR) and is used by the machine-mode firmware to 
+            configure and initialize the hardware platform. Width 5 bit, default 5’d4 */
+        mhart4@ffff8fffe0400030,0x4 {
+            reg = <3>;
+            bits = <5>;
+            default-value = <4>;
+        };
+        
+        /* lower parts of the reset vectors for all the cores from SCR7#0, SCR7#1, SCR7#2 and SCR7#3.
+            Width is 32 bit. Default value is 32’d0. */
+        rstv24l@ffff8fffe04001bc,0x4 {
+            reg = <4>;
+        };
+
+        rstv25l@ffff8fffe04001c4,0x4 {
+            reg = <6>;
+        };
+
+        rstv26l@ffff8fffe04001cc,0x4 {
+            reg = <8>;
+        };
+
+        rstv27l@ffff8fffe04001d4,0x4 {
+            reg = <10>;
+        };
+
+        /* Higher part of the reset vectors for all the cores from SCR4#0 to SCR7#3.
+            Width is 12 bit. Default value is 12’d0. */
+        rstv24h@ffff8fffe04001c0,0x4 {
+            reg = <5>;
+        };
+
+        rstv25h@ffff8fffe04001c8,0x4 {
+            reg = <7>;
+        };
+
+        rstv26h@ffff8fffe04001d0,0x4 {
+            reg = <9>;
+        };
+
+        rstv27h@ffff8fffe04001d8,0x4 {
+            reg = <11>;
+        };
+
+        /* INT24...INT27 – interrupt generation access registers. There are 4 registers to generate
+            interrupts for SCR7 core. Every register is a 5 bit saturating counter. Maximum
+            value is 28. Operation:
+                a. To raise an interrupt for specific core the initiator core writes value 1’b1 to the
+                corresponding register;
+                b. The counter of the receiver core (INT0...27) increments
+                c. IRQ line for corresponding core is high If its INTn counter > 0
+                d. In interrupt processing routine the receiver core reads INTn register value, it returns
+                number of interrupts still pending and decrements value of INTn counter
+                e. When all the pending interrupts processed the INTn counter equals zero and IRQ line
+                becomes low.
+                f. To drop all the pending interrupts any core can write value 1’b0 to corresponding
+                interrupt register INTn */
+        /* Interrupt generation for SCR7#0 */
+        int24@ffff8fffe0400260,0x4 {
+            reg = <12>;
+            bits = <5>;                                 // 5 bits saturating counter
+            max-value = <28>;                           // Maximum value is 28
+            increment-value = <1>;                      // Increments when the initiator core writes value 1’b1 to the corresponding register
+            interrupt-on-gt-zero;                       // IRQ line for corresponding core is high If its INTn counter > 0
+        };
+
+        /* Interrupt generation for SCR7#1 */
+        int25@ffff8fffe0400264,0x4 {
+            reg = <13>;
+            bits = <5>;                                 // 5 bits saturating counter
+            max-value = <28>;                           // Maximum value is 28
+            increment-value = <1>;                      // Increments when the initiator core writes value 1’b1 to the corresponding register
+            interrupt-on-gt-zero;                       // IRQ line for corresponding core is high If its INTn counter > 0
+        };
+
+        /* Interrupt generation for SCR7#2 */
+        int26@ffff8fffe0400268,0x4 {
+            reg = <14>;
+            bits = <5>;                                 // 5 bits saturating counter
+            max-value = <28>;                           // Maximum value is 28
+            increment-value = <1>;                      // Increments when the initiator core writes value 1’b1 to the corresponding register
+            interrupt-on-gt-zero;                       // IRQ line for corresponding core is high If its INTn counter > 0
+        };
+
+        /* Interrupt generation for SCR7#3 */
+        int27@ffff8fffe040026c,0x4 {
+            reg = <15>;
+            bits = <5>;                                 // 5 bits saturating counter
+            max-value = <28>;                           // Maximum value is 28
+            increment-value = <1>;                      // Increments when the initiator core writes value 1’b1 to the corresponding register
+            interrupt-on-gt-zero;                       // IRQ line for corresponding core is high If its INTn counter > 0
+        };
+
+        /* Non modifying access handler to INT24 counter. Read only register, indicates number of currently pending interrupts (value of INTn) to SCR7#0.*/
+        int24_ro@ffff8fffe040035c,0x4 {
+            reg = <16>;
+            read-only;
+        };
+
+        /* Non modifying access handler to INT25 counter. Read only register, indicates number of currently pending interrupts (value of INTn) to SCR7#1.*/
+        int25_ro@ffff8fffe0400360,0x4 {
+            reg = <17>;
+            read-only;
+        };
+
+        /* Non modifying access handler to INT26 counter. Read only register, indicates number of currently pending interrupts (value of INTn) to SCR7#2.*/
+        int26_ro@ffff8fffe0400364,0x4 {
+            reg = <18>;
+            read-only;
+        };
+
+        /* Non modifying access handler to INT27 counter. Read only register, indicates number of currently pending interrupts (value of INTn) to SCR7#3.*/
+        int27_ro@ffff8fffe0400368,0x4 {
+            reg = <19>;
+            read-only;
+        };        
+    };
+
+    /***********************************************************************Memory Section**************************************************************************/
+    memory {
+
+        /* All the memory is controlled by the scr7_clk */
+        clocks = <&scr7_clk>;
+
+        #address-cells = <2>;
+        #size-cells = <1>;
+
+        /* TCM */
+        tcm@ffff8ffff0000000,0x20000 {
+            reg = <0xffff8fff 0xf0000000 0x20000>;
+            device_type = "memory";
+            cacheable;
+        };
+
+        /* ROM */
+        rom@ffff8fffffff8000,0x10000 {
+            reg = <0xffff8fff 0xffff8000 0x10000>;
+            device_type = "memory";
+            no-map;                 // indicates that the memory range is not available for use by the system 
+        };
+
+        /* SRAM */
+        sram@ffff8ffff8000000,0x200000 {
+            reg =   <0xffff8fff 0xf8000000 0x80000>,       // bank 0
+                    <0xffff8fff 0xf8080000 0x80000>,       // bank 1
+                    <0xffff8fff 0xf8100000 0x80000>,       // bank 2
+                    <0xffff8fff 0xf8180000 0x80000>;       // bank 3
+
+            #address-cells = <1>;
+            #size-cells = <0>;
+
+            sram-bank0@ffff8ffff8000000,0x80000 {
+                reg = <0>;
+            };
+
+            sram-bank1@ffff8ffff8080000,0x80000 {
+                reg = <1>;
+            };
+
+            sram-bank2@ffff8ffff8100000,0x80000 {
+                reg = <2>;
+            };
+
+            sram-bank3@ffff8ffff8180000,0x80000 {
+                reg = <3>;
+            };
+        };
+
+    };
+ 
+};
