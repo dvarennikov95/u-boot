@@ -147,15 +147,15 @@
         /* All the adresses in the external apb subsystem are non-cachable */
         no-cache;
 
-        #address-cells = <1>;
-        #size-cells = <0>;
+        #address-cells = <2>;
+        #size-cells = <1>;
 
         // https://github.com/nextsilicon/nextPostSi/blob/d509a27a4844230d116c6c0dab4b249fcc974924/sival/cr_space/uart_regs_1.h
         // https://github.com/nextsilicon/u-boot/blob/521bf7a1e3c728811fcd5d260f5f1390b2ff2d53/drivers/serial/ns16550.c
         uart1: serial@214000 {
 			compatible = "snps,dw-apb-uart";
-			reg = <0>;
-
+			reg = <0xffff8fff 0xe0214000 0x1000>;
+            clock-frequency = <50000000>;   //50mhz
 			interrupts = <5>;
 			status = "okay";
 		};
@@ -163,8 +163,8 @@
         // https://github.com/nextsilicon/nextPostSi/blob/d509a27a4844230d116c6c0dab4b249fcc974924/sival/cr_space/uart_regs_2.h
         uart2: serial@218000 {
 			compatible = "snps,dw-apb-uart";
-			reg = <1>;
-
+			reg = <0xffff8fff 0xe0218000 0x1000>;
+            clock-frequency = <50000000>;   //50mhz
 			interrupts = <3>;
 			status = "okay";
 		};
@@ -366,49 +366,63 @@
         /* All the memory is controlled by the scr7_clk */
         clocks = <&scr7_clk>;
 
+        reg = // <0xffff8fff 0xf8000000 0x80000>,       // bank 0
+        //         <0xffff8fff 0xf8080000 0x80000>,       // bank 1
+        //         <0xffff8fff 0xf8100000 0x80000>,       // bank 2
+                //<0xffff8fff 0xf8180000 0x80000>,       // bank 3
+                <0x00000000 0x00000000 0x1000000>;       // hbm
+
         #address-cells = <2>;
         #size-cells = <1>;
 
-        /* TCM */
-        tcm@ffff8ffff0000000,0x20000 {
-            reg = <0xffff8fff 0xf0000000 0x20000>;
+        /* HBM */
+        hbm@0000000000000000,0x1000000 {
+            reg = <0x00000000 0x00000000 0x1000000>;
             device_type = "memory";
             cacheable;
         };
 
-        /* ROM */
-        rom@ffff8fffffff8000,0x10000 {
-            reg = <0xffff8fff 0xffff8000 0x10000>;
-            device_type = "memory";
-            no-map;                 // indicates that the memory range is not available for use by the system 
-        };
 
-        /* SRAM */
-        sram@ffff8ffff8000000,0x200000 {
-            reg =   <0xffff8fff 0xf8000000 0x80000>,       // bank 0
-                    <0xffff8fff 0xf8080000 0x80000>,       // bank 1
-                    <0xffff8fff 0xf8100000 0x80000>,       // bank 2
-                    <0xffff8fff 0xf8180000 0x80000>;       // bank 3
+        // /* TCM */
+        // tcm@ffff8ffff0000000,0x20000 {
+        //     reg = <0xffff8fff 0xf0000000 0x20000>;
+        //     device_type = "memory";
+        //     cacheable;
+        // };
 
-            #address-cells = <1>;
-            #size-cells = <0>;
+        // /* ROM */
+        // rom@ffff8fffffff8000,0x10000 {
+        //     reg = <0xffff8fff 0xffff8000 0x10000>;
+        //     device_type = "memory";
+        //     no-map;                 // indicates that the memory range is not available for use by the system 
+        // };
 
-            sram-bank0@ffff8ffff8000000,0x80000 {
-                reg = <0>;
-            };
+        // /* SRAM */
+        // sram@ffff8ffff8000000,0x200000 {
+        //     reg =   <0xffff8fff 0xf8000000 0x80000>,       // bank 0
+        //             <0xffff8fff 0xf8080000 0x80000>,       // bank 1
+        //             <0xffff8fff 0xf8100000 0x80000>,       // bank 2
+        //             <0xffff8fff 0xf8180000 0x80000>;       // bank 3
 
-            sram-bank1@ffff8ffff8080000,0x80000 {
-                reg = <1>;
-            };
+        //     #address-cells = <1>;
+        //     #size-cells = <0>;
 
-            sram-bank2@ffff8ffff8100000,0x80000 {
-                reg = <2>;
-            };
+        //     sram-bank0@ffff8ffff8000000,0x80000 {
+        //         reg = <0>;
+        //     };
 
-            sram-bank3@ffff8ffff8180000,0x80000 {
-                reg = <3>;
-            };
-        };
+        //     sram-bank1@ffff8ffff8080000,0x80000 {
+        //         reg = <1>;
+        //     };
+
+        //     sram-bank2@ffff8ffff8100000,0x80000 {
+        //         reg = <2>;
+        //     };
+
+        //     sram-bank3@ffff8ffff8180000,0x80000 {
+        //         reg = <3>;
+        //     };
+        // };
 
     };
  

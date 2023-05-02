@@ -39,13 +39,53 @@ static void *ns_memcpy(void *dst, const void *src, uint32_t count)
     return dst;
 }
 
-int board_init(void)
+int board_early_init_f(void)
 {
+    printf("Early initializing board!\n");
     volatile struct platform_log_ring *ring = (volatile struct platform_log_ring *)((PLATFORM_SCR7_LOG_RING_END_ADDRESS) - PLATFORM_LOG_RING_SIZE - sizeof(uint32_t) - sizeof(uint32_t));
     const char test_print[] = SCR7_TEST_PRINT;
     ring->head = 0;
     ns_memcpy((void *)(ring->log), test_print, sizeof(test_print));
     ring->head = sizeof(test_print);
-
 	return 0;
+}
+
+int board_init(void)
+{
+    printf("Initializing board!\n");
+    volatile struct platform_log_ring *ring = (volatile struct platform_log_ring *)((PLATFORM_SCR7_LOG_RING_END_ADDRESS) - PLATFORM_LOG_RING_SIZE - sizeof(uint32_t) - sizeof(uint32_t));
+    const char test_print[] = SCR7_TEST_PRINT;
+    ring->head = 0;
+    ns_memcpy((void *)(ring->log), test_print, sizeof(test_print));
+    ring->head = sizeof(test_print);
+	return 0;
+}
+
+int board_late_init(void)
+{
+    printf("Board late init!\n");
+	return 0;
+}
+// int dram_init(void)
+// {
+//     printf("DRAM test not implemented!\n");
+// 	volatile struct platform_log_ring *ring = (volatile struct platform_log_ring *)((PLATFORM_SCR7_LOG_RING_END_ADDRESS) - PLATFORM_LOG_RING_SIZE - sizeof(uint32_t) - sizeof(uint32_t));
+//     const char test_print[] = SCR7_TEST_PRINT;
+//     ring->head = 0;
+//     ns_memcpy((void *)(ring->log), test_print, sizeof(test_print));
+//     ring->head = sizeof(test_print);
+
+// 	return (0);
+// }
+
+int testdram(void)
+{
+    printf("DRAM test not implemented!\n");
+	volatile struct platform_log_ring *ring = (volatile struct platform_log_ring *)((PLATFORM_SCR7_LOG_RING_END_ADDRESS) - PLATFORM_LOG_RING_SIZE - sizeof(uint32_t) - sizeof(uint32_t));
+    const char test_print[] = SCR7_TEST_PRINT;
+    ring->head = 0;
+    ns_memcpy((void *)(ring->log), test_print, sizeof(test_print));
+    ring->head = sizeof(test_print);
+
+	return (0);
 }

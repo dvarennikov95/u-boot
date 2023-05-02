@@ -216,8 +216,7 @@ int ns16550_calc_divisor(struct ns16550 *port, int clock, int baudrate)
 static void ns16550_setbrg(struct ns16550 *com_port, int baud_divisor)
 {
 	/* to keep serial format, read lcr before writing BKSE */
-	int lcr_val = serial_in(&com_port->lcr) & ~UART_LCR_BKSE;
-
+	int lcr_val = 0; //serial_in(&com_port->lcr) & ~UART_LCR_BKSE;
 	serial_out(UART_LCR_BKSE | lcr_val, &com_port->lcr);
 	serial_out(baud_divisor & 0xff, &com_port->dll);
 	serial_out((baud_divisor >> 8) & 0xff, &com_port->dlm);
@@ -248,8 +247,8 @@ void ns16550_init(struct ns16550 *com_port, int baud_divisor)
 	}
 #endif
 
-	while (!(serial_in(&com_port->lsr) & UART_LSR_TEMT))
-		;
+	// while (!(serial_in(&com_port->lsr) & UART_LSR_TEMT))
+	// 	;
 
 	serial_out(CFG_SYS_NS16550_IER, &com_port->ier);
 #if defined(CONFIG_ARCH_OMAP2PLUS) || defined(CONFIG_OMAP_SERIAL)
