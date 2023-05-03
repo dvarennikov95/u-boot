@@ -1,5 +1,7 @@
 
 #include <common.h>
+#include <asm/global_data.h>
+#include <asm/io.h>
 
 #define SCR7_TEST_PRINT "Running U-boot!"
 #define PLATFORM_SCR7_LOG_RING_END_ADDRESS (0xffff8ffff8200000)
@@ -38,7 +40,7 @@ static void *ns_memcpy(void *dst, const void *src, uint32_t count)
 
     return dst;
 }
-
+DECLARE_GLOBAL_DATA_PTR;
 int board_early_init_f(void)
 {
     printf("Early initializing board!\n");
@@ -53,6 +55,7 @@ int board_early_init_f(void)
 int board_init(void)
 {
     printf("Initializing board!\n");
+    gd->flags |= GD_FLG_DISABLE_CONSOLE;
     volatile struct platform_log_ring *ring = (volatile struct platform_log_ring *)((PLATFORM_SCR7_LOG_RING_END_ADDRESS) - PLATFORM_LOG_RING_SIZE - sizeof(uint32_t) - sizeof(uint32_t));
     const char test_print[] = SCR7_TEST_PRINT;
     ring->head = 0;
