@@ -361,69 +361,78 @@
     };
 
     /***********************************************************************Memory Section**************************************************************************/
-    memory {
+    // memory {
 
-        /* All the memory is controlled by the scr7_clk */
-        clocks = <&scr7_clk>;
+    //     /* All the memory is controlled by the scr7_clk */
+    //     clocks = <&scr7_clk>;
 
-        reg = // <0xffff8fff 0xf8000000 0x80000>,       // bank 0
-        //         <0xffff8fff 0xf8080000 0x80000>,       // bank 1
-        //         <0xffff8fff 0xf8100000 0x80000>,       // bank 2
-                //<0xffff8fff 0xf8180000 0x80000>,       // bank 3
-                <0x00000000 0x00000000 0x1000000>;       // hbm
+    //     reg = // <0xffff8fff 0xf8000000 0x80000>,       // bank 0
+    //     //         <0xffff8fff 0xf8080000 0x80000>,       // bank 1
+    //     //         <0xffff8fff 0xf8100000 0x80000>,       // bank 2
+    //             //<0xffff8fff 0xf8180000 0x80000>,       // bank 3
+    //             <0x00000000 0x00000000 0x1000000>;       // hbm
 
-        #address-cells = <2>;
-        #size-cells = <1>;
+    //     #address-cells = <2>;
+    //     #size-cells = <1>;
 
-        /* HBM */
-        hbm@0000000000000000,0x1000000 {
-            reg = <0x00000000 0x00000000 0x1000000>;
-            device_type = "memory";
-            cacheable;
-        };
+    //     /* HBM */
+    //     hbm@0000000000000000,0x1000000 {
+    //         reg = <0x00000000 0x00000000 0x1000000>;
+    //         device_type = "memory";
+    //         cacheable;
+    //     };
 
+    //     /* Memory for Linux */
+    //     lin_mem@80000000,80000000 {
+    //         linux,usable-memory = <0x00000000 0x80000000 0x80000000>;
+    //         device_type = "memory";
+    //         cacheable;
+    //     };
+    //     // /* TCM */
+    //     // tcm@ffff8ffff0000000,0x20000 {
+    //     //     reg = <0xffff8fff 0xf0000000 0x20000>;
+    //     //     device_type = "memory";
+    //     //     cacheable;
+    //     // };
 
-        // /* TCM */
-        // tcm@ffff8ffff0000000,0x20000 {
-        //     reg = <0xffff8fff 0xf0000000 0x20000>;
-        //     device_type = "memory";
-        //     cacheable;
-        // };
+    //     // /* ROM */
+    //     // rom@ffff8fffffff8000,0x10000 {
+    //     //     reg = <0xffff8fff 0xffff8000 0x10000>;
+    //     //     device_type = "memory";
+    //     //     no-map;                 // indicates that the memory range is not available for use by the system 
+    //     // };
 
-        // /* ROM */
-        // rom@ffff8fffffff8000,0x10000 {
-        //     reg = <0xffff8fff 0xffff8000 0x10000>;
-        //     device_type = "memory";
-        //     no-map;                 // indicates that the memory range is not available for use by the system 
-        // };
+    //     // /* SRAM */
+    //     // sram@ffff8ffff8000000,0x200000 {
+    //     //     reg =   <0xffff8fff 0xf8000000 0x80000>,       // bank 0
+    //     //             <0xffff8fff 0xf8080000 0x80000>,       // bank 1
+    //     //             <0xffff8fff 0xf8100000 0x80000>,       // bank 2
+    //     //             <0xffff8fff 0xf8180000 0x80000>;       // bank 3
 
-        // /* SRAM */
-        // sram@ffff8ffff8000000,0x200000 {
-        //     reg =   <0xffff8fff 0xf8000000 0x80000>,       // bank 0
-        //             <0xffff8fff 0xf8080000 0x80000>,       // bank 1
-        //             <0xffff8fff 0xf8100000 0x80000>,       // bank 2
-        //             <0xffff8fff 0xf8180000 0x80000>;       // bank 3
+    //     //     #address-cells = <1>;
+    //     //     #size-cells = <0>;
 
-        //     #address-cells = <1>;
-        //     #size-cells = <0>;
+    //     //     sram-bank0@ffff8ffff8000000,0x80000 {
+    //     //         reg = <0>;
+    //     //     };
 
-        //     sram-bank0@ffff8ffff8000000,0x80000 {
-        //         reg = <0>;
-        //     };
+    //     //     sram-bank1@ffff8ffff8080000,0x80000 {
+    //     //         reg = <1>;
+    //     //     };
 
-        //     sram-bank1@ffff8ffff8080000,0x80000 {
-        //         reg = <1>;
-        //     };
+    //     //     sram-bank2@ffff8ffff8100000,0x80000 {
+    //     //         reg = <2>;
+    //     //     };
 
-        //     sram-bank2@ffff8ffff8100000,0x80000 {
-        //         reg = <2>;
-        //     };
+    //     //     sram-bank3@ffff8ffff8180000,0x80000 {
+    //     //         reg = <3>;
+    //     //     };
+    //     // };
 
-        //     sram-bank3@ffff8ffff8180000,0x80000 {
-        //         reg = <3>;
-        //     };
-        // };
+    // };
 
-    };
- 
+    memory: memory@80000000 {
+		device_type = "memory";
+		reg = <0x00000000 0x80000000 0x1000000>;
+	};
 };
