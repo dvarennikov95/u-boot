@@ -5,7 +5,7 @@
     compatible = "nextsilicon, scr7";
 
     #address-cells = <2>;
-    #size-cells = <1>;
+    #size-cells = <2>;
 
     interrupt-parent = <&intc>;
 
@@ -118,7 +118,7 @@
         compatible = "sifive,plic-1.0.0";
         interrupt-controller;
         #interrupt-cells = <1>;
-        reg = <0xffff8fff 0xc0000000 0x1000000>;
+        reg = <0xffff8fff 0xc0000000 0x00000000 0x1000000>;
         riscv,ndev = <10>; // Specifies how many external interrupts are supported by this controller
 
         /* 0xffffffff - All interrupts are forwarded to all CPU cores
@@ -433,6 +433,6 @@
 
     memory: memory@80000000 {
 		device_type = "memory";
-		reg = <0x00000000 0x80000000 0x1000000>;
+		reg = <0x00000000 0x00000000 0x00000001 0x00000000>;                     
 	};
 };
